@@ -1,0 +1,23 @@
+{
+  "name": "basic",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm run tsToZod && tsup",
+    "watch": "npm run build -- --watch",
+    "start": "node dist/index",
+    "dev": "nodemon -e ts --ignore src/schema.ts --exec 'tsup && pnpm run start'",
+    "tsToZod": "ts-to-zod src/types.ts src/schema.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@spacecloud-io/worker": "workspace:^",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "ts-to-zod": "^3.1.2",
+    "tsconfig": "workspace:^"
+  }
+}

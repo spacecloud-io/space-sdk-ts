@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node.js",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "es2016",
+    "allowJs": true,
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": false,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "commonjs",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "strict": false
+  },
+  "include": ["./src"],
+  "exclude": ["node_modules"]
+}
