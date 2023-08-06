@@ -4,22 +4,33 @@ import openapi3 from "openapi3-ts/oas30";
 
 import { Route, RouteConfig, RouteUpdater } from "./route";
 
+export interface RouterConfig {
+  name: string;
+  baseUrl: string;
+}
+
 export class Router {
-  private name: string;
+  private config: RouterConfig;
   private routes: Route<any, any>[];
 
-  constructor(name: string) {
-    this.name = name;
+  constructor(config: RouterConfig) {
+    this.config = config;
     this.routes = [];
   }
 
-  // Query creates a new route of the query type
+  /**
+   * Query registers a read-only operation.
+   * It uses the `GET` http method by default.
+   * @param opId Name for the operation
+   * @returns 
+   */
   public query(opId: string) {
     // Create a new route object
     const config: RouteConfig = {
       opId,
       opType: "query",
       method: "get",
+      url: `${this.config.baseUrl}/${opId}`,
       jsonSchema: {
         input: { type: "null" },
         output: {}
@@ -30,15 +41,22 @@ export class Router {
       }
     };
 
-    return this.addRoute<void, any>(config);
+    return this._addRoute<void, any>(config);
   }
 
+  /**
+   * Mutation registers an operation which can mutate the state of the system. 
+   * It uses the `POST` http method by default.
+   * @param opId Name for the operation
+   * @returns 
+   */
   public mutation(opId: string) {
     // Create a new route object
     const config: RouteConfig = {
       opId,
       opType: "mutation",
       method: "post",
+      url: `${this.config.baseUrl}/${opId}`,
       jsonSchema: {
         input: {},
         output: { type: "null" }
@@ -49,10 +67,10 @@ export class Router {
       },
     };
 
-    return this.addRoute<any, void>(config);
+    return this._addRoute<any, void>(config);
   }
 
-  private addRoute<I, O>(config: RouteConfig) {
+  private _addRoute<I, O>(config: RouteConfig) {
     const index = this.routes.length;
     const routeUpdater: RouteUpdater = r => {
       this.routes[index] = r;
@@ -64,15 +82,15 @@ export class Router {
     return route;
   }
 
-  initialiseRoutes(app: express.Application) {
+  _initialiseRoutes(app: express.Application) {
     // Create the open api document
     const builder = openapi3.OpenApiBuilder.create();
-    builder.addTitle(this.name);
+    builder.addTitle(this.config.name);
 
     // Add one path for each operation
     this.routes.forEach(route => {
       // Get OpenAPI operation for route
-      const { path, method, operation } = route.getOpenAPIOperation();
+      const { path, method, operation } = route._getOpenAPIOperation();
 
       // Add path to OpenAPI spec
       builder.addPath(path, { [method]: operation });
@@ -81,15 +99,24 @@ export class Router {
     // Add express routes for openapi doc
     const jsonSpec = builder.getSpecAsJson();
     const yamlSpec = builder.getSpecAsYaml();
-    app.get("/v1/openapi.json", (_req, res) => res.status(200).send(jsonSpec));
-    app.get("/v1/openapi.yaml", (_req, res) => res.status(200).send(yamlSpec));
+    app.get(`${this.config.baseUrl}/openapi.json`, (_req, res) => {
+      res.setHeader("Content-Type", "application/json");
+      res.status(200).send(jsonSpec);
+    });
+    app.get(`${this.config.baseUrl}/openapi.yaml`, (_req, res) => {
+      res.setHeader("Content-Type", "application/yaml");
+      res.status(200).send(yamlSpec);
+    });
 
     // Add express route for each operation the user has registered
     this.routes.forEach(route => route.addRoute(app));
+
+    // Add a default route to catch errors
+    app.all("*", (_req, res) => res.status(400).json({ message: "No route found" }));
   }
 
   // Returns a list of routes
-  getRoutes() {
+  _getRoutes() {
     return this.routes;
   }
 }

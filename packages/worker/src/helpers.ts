@@ -1,3 +1,4 @@
+import { Request } from "express";
 import openapi3 from "openapi3-ts/oas30";
 
 export const getPayloadFromParams = (query: any, inputSchema: any) => {
@@ -70,4 +71,14 @@ export const getErrorResponseSchema = () => {
   };
 
   return responseObject;
+};
+
+export const extractHeadersFromRequest = (req: Request) => {
+  const headers: { [key: string]: string } = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (typeof value === "string") headers[key] = value;
+    else if (Array.isArray(value)) headers[key] = value[0];
+  }
+
+  return headers;
 };

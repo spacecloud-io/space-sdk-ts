@@ -2,13 +2,13 @@ import { Server } from "@spacecloud-io/worker";
 import { z } from "zod";
 import * as schemas from "./schema";
 
-const server = Server.create("myServer");
+const server = Server.create({ name: "myServer" });
 const router = server.router();
 
-router.mutation("operate")
-  .input(z.object({ name: z.string()}))
+router.query("operate")
+  .input(z.object({ name: z.string() }))
   .output(z.object({ greeting: z.string() }))
-  .fn(async (req) => {
+  .fn(async (_ctx, req) => {
     return { greeting: `Hi ${req.name}` };
   });
 
@@ -17,7 +17,7 @@ router.mutation("operate")
 router.mutation("addTodo")
   .input(schemas.addTodoRequestSchema)
   .output(schemas.addTodoResponseSchema)
-  .fn(async (req) => {
+  .fn(async (_ctx, req) => {
     console.log("Adding todo:", req);
     return { id: "myid" };
   });
