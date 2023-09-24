@@ -24,10 +24,7 @@
     "@typescript-eslint/semi": "error",
     "@typescript-eslint/no-var-requires": "error",
     "@typescript-eslint/member-delimiter-style": "error",
-    "quotes": [
-      "error",
-      "double"
-    ],
+    "quotes": ["error", "double"],
     "@typescript-eslint/no-unused-vars": [
       "error",
       {

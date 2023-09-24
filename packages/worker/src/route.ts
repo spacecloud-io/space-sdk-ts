@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import openapi3 from "openapi3-ts/oas30";
 
-import { getErrorResponseSchema, getPayloadFromParams, isZodTypeNull, processException } from "./helpers";
+import { getErrorResponseSchema, getOpenApiParametersFromJsonSchema, getPayloadFromParams, isZodTypeNull, processException } from "./helpers";
 import { Context } from "./context";
 
 export type RouteUpdater = (r: Route<any, any>) => void;
@@ -118,18 +118,38 @@ export class Route<I, O> {
   }
 
   public _getOpenAPIOperation() {
-    // Process request schema
-    const isRequestNull = isZodTypeNull(this.config.zodSchemas.input);
-    const requestBodyObject: openapi3.RequestBodyObject = {
-      description: `Request object for ${this.config.opId}`,
-      content: {},
-      required: false
+    // First create a operation
+    const operation: openapi3.OperationObject = {
+      operationId: this.config.opId,
+      responses: {
+        "400": getErrorResponseSchema(),
+        "401": getErrorResponseSchema(),
+        "403": getErrorResponseSchema(),
+        "500": getErrorResponseSchema(),
+      },
+
+      // Add the sc specific extensions
+      ["x-request-op-type"]: this.config.opType,
     };
 
-    // Add request schema if we require payload
+    // Process request schema
+    const isRequestNull = isZodTypeNull(this.config.zodSchemas.input);
     if (!isRequestNull) {
-      requestBodyObject.content = { "application/json": { schema: this.config.jsonSchema.input } };
-      requestBodyObject.required = true;
+      switch (this.config.method) {
+        case "get":
+        case "delete":
+          operation.parameters = getOpenApiParametersFromJsonSchema(this.config.jsonSchema.input);
+          break;
+
+        default:
+          // Add request body if we require payload
+          operation.requestBody = {
+            description: `Request object for ${this.config.opId}`,
+            content: { "application/json": { schema: this.config.jsonSchema.input } },
+            required: true
+          };
+          break;
+      }
     }
 
     // Process response schemas
@@ -141,21 +161,7 @@ export class Route<I, O> {
     if (!isResponseNull) {
       successResponseObject.content = { "application/json": { schema: this.config.jsonSchema.output } };
     }
-
-
-    // Add the schemas to operation
-    const operation: openapi3.OperationObject = {
-      operationId: this.config.opId,
-      requestBody: requestBodyObject,
-      responses: {
-        [successResponseStatusCode]: successResponseObject,
-        "400": getErrorResponseSchema(),
-        "500": getErrorResponseSchema(),
-      },
-
-      // Add the sc specific extensions
-      ["x-request-op-type"]: this.config.opType,
-    };
+    operation.responses[successResponseStatusCode] = successResponseObject;
 
     return {
       path: this.config.url,

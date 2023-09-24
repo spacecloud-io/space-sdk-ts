@@ -1,6 +1,6 @@
 {
   "name": "@spacecloud-io/worker",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,8 +13,10 @@
   "author": "Noorain Panjwani <noorain.panjwani@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "commander": "^11.0.0",
     "express": "^4.18.2",
     "openapi3-ts": "^4.1.2",
+    "yaml": "^2.3.2",
     "zod": "^3.21.4",
     "zod-to-json-schema": "^3.21.1"
   },

@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "build:worker": "pnpm --filter worker run build",
+    "build:basic": "pnpm --filter basic run build",
     "dev:worker": "pnpm --filter worker run dev",
     "dev:basic": "pnpm --filter basic run dev",
     "start:basic": "pnpm --filter basic run start"

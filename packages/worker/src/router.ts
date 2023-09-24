@@ -12,10 +12,12 @@ export interface RouterConfig {
 export class Router {
   private config: RouterConfig;
   private routes: Route<any, any>[];
+  openApiBuilder: openapi3.OpenApiBuilder;
 
   constructor(config: RouterConfig) {
     this.config = config;
     this.routes = [];
+    this.openApiBuilder = openapi3.OpenApiBuilder.create();
   }
 
   /**
@@ -82,10 +84,9 @@ export class Router {
     return route;
   }
 
-  _initialiseRoutes(app: express.Application) {
+  _generateOpenApi() {
     // Create the open api document
-    const builder = openapi3.OpenApiBuilder.create();
-    builder.addTitle(this.config.name);
+    this.openApiBuilder.addTitle(this.config.name);
 
     // Add one path for each operation
     this.routes.forEach(route => {
@@ -93,12 +94,18 @@ export class Router {
       const { path, method, operation } = route._getOpenAPIOperation();
 
       // Add path to OpenAPI spec
-      builder.addPath(path, { [method]: operation });
+      this.openApiBuilder.addPath(path, { [method]: operation });
     });
+  }
 
+  _getOpenApiSpec() {
+    return this.openApiBuilder.getSpec();
+  }
+
+  _initialiseRoutes(app: express.Application) {
     // Add express routes for openapi doc
-    const jsonSpec = builder.getSpecAsJson();
-    const yamlSpec = builder.getSpecAsYaml();
+    const jsonSpec = this.openApiBuilder.getSpecAsJson();
+    const yamlSpec = this.openApiBuilder.getSpecAsYaml();
     app.get(`${this.config.baseUrl}/openapi.json`, (_req, res) => {
       res.setHeader("Content-Type", "application/json");
       res.status(200).send(jsonSpec);

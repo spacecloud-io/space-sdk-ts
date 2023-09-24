@@ -1,6 +1,36 @@
 import { Request } from "express";
 import openapi3 from "openapi3-ts/oas30";
 
+export const getOpenApiParametersFromJsonSchema = (schema: any) => {
+  let params: openapi3.ParameterObject[] = [];
+
+  for (const key in schema.properties) {
+    const paramType = schema.properties[key].type;
+    switch (paramType) {
+      case "string":
+      case "number":
+      case "integer":
+      case "boolean":
+        params = [...params, {
+          in: "query",
+          name: key,
+          schema: { type: paramType },
+        }];
+        break;
+
+      default:
+        params = [...params, {
+          in: "query",
+          name: key,
+          content: { "application/json": { schema: schema.properties[key] } },
+        }];
+        break;
+    }
+  }
+
+  return params;
+};
+
 export const getPayloadFromParams = (query: any, inputSchema: any) => {
   // Return the payload as is if type is any or additional property is set to true
   if (inputSchema.type === undefined || inputSchema.additionalProperties) return query;
